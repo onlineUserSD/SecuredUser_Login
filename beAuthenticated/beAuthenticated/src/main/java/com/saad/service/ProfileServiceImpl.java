@@ -7,7 +7,10 @@ import com.saad.repository.UserRepository;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -22,9 +25,12 @@ public class ProfileServiceImpl implements ProfileService{
     @Override
     public ProfileResponse createProfile(ProfileRequest request) {
         UserEntity userEntity = convertToUserEntity(request);
+        if(!userRepo.existsByEmail(request.getEmail())){
         userEntity = userRepo.save(userEntity);
         return convertToProfileResponse(userEntity);
-        
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT,"Email ALready Exist");
+
     }
 
     private ProfileResponse convertToProfileResponse(UserEntity userEntity) {
