@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class ProfileServiceImpl implements ProfileService{
     @Autowired
     private final UserRepository userRepo;
+    private final PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -47,7 +49,7 @@ public class ProfileServiceImpl implements ProfileService{
                 .email(request.getEmail())
                 .userId(UUID.randomUUID().toString())
                 .username(request.getName())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .isAccountVerified(false)
                 .resetOtpExpiredAt(0L)
                 .verifyOtp(null)
