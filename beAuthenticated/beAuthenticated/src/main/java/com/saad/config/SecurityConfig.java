@@ -1,5 +1,6 @@
 package com.saad.config;
 
+import com.saad.filter.JwtResponseFilter;
 import com.saad.service.MyUserDetailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,6 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final MyUserDetailService myUserDetailService;
+    private final JwtResponseFilter jwtResponseFilter;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.cors(Customizer.withDefaults())
@@ -36,8 +39,11 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/register", "/send-reset-otp","/reset-password", "/logout")
                         .permitAll().anyRequest().authenticated())
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .logout(AbstractHttpConfigurer::disable);
-                return http.build();
+                .logout(AbstractHttpConfigurer::disable)
+                .addFilterBefore(jwtResponseFilter, UsernamePasswordAuthenticationFilter.class);
+
+
+        return http.build();
     }
 
     @Bean

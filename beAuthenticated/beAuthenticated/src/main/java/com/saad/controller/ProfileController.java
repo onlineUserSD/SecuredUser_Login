@@ -21,4 +21,8 @@ public class ProfileController {
          ProfileResponse response = profileService.createProfile(request);
          return response;
     }
+    @GetMapping("/test")
+    public String test(){
+        return "Auth is working";
+    }
 }
