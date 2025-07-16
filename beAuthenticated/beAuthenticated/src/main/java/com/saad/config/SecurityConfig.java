@@ -31,6 +31,7 @@ import java.util.List;
 public class SecurityConfig {
     private final MyUserDetailService myUserDetailService;
     private final JwtResponseFilter jwtResponseFilter;
+    private final MyCustomAuthenticationEntry myCustomAuthenticationEntry;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.cors(Customizer.withDefaults())
@@ -40,7 +41,8 @@ public class SecurityConfig {
                         .permitAll().anyRequest().authenticated())
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .logout(AbstractHttpConfigurer::disable)
-                .addFilterBefore(jwtResponseFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtResponseFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(myCustomAuthenticationEntry));
 
 
         return http.build();
