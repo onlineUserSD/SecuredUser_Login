@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @RequiredArgsConstructor
 @Builder
@@ -23,6 +25,7 @@ public class ProfileServiceImpl implements ProfileService{
     @Autowired
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
 
     @Override
@@ -41,6 +44,43 @@ public class ProfileServiceImpl implements ProfileService{
         UserEntity existingUser = userRepo.findByEmail(email)
                 .orElseThrow(()-> new UsernameNotFoundException("User not found"+email));
         return convertToProfileResponse(existingUser);
+    }
+
+    @Override
+    public void sendResetOtp(String email) {
+        UserEntity existingUser= userRepo.findByEmail(email)
+                .orElseThrow(()-> new UsernameNotFoundException("User not found "+email));
+
+        String otp =  String.valueOf(ThreadLocalRandom.current().nextInt(100000,1000000));
+
+       long expiryTime = System.currentTimeMillis() + (15 * 60 * 1000);
+
+       existingUser.setResetOtp(otp);
+       existingUser.setResetOtpExpiredAt(expiryTime);
+
+       userRepo.save(existingUser);
+       try{
+           emailService.sendResetOtpEmail(existingUser.getEmail(),otp);
+       } catch(Exception ex){
+           throw new RuntimeException("Unable to send email");
+       }
+    }
+
+    @Override
+    public void resetPassword(String email, String otp, String newPassword) {
+       UserEntity existingUser =  userRepo.findByEmail(email)
+                .orElseThrow(()-> new UsernameNotFoundException("User not found"+email));
+        if(existingUser.getResetOtp() == null || !existingUser.getResetOtp().equals(otp)){
+            throw new RuntimeException("Invalid OTP");
+        }
+        if(existingUser.getResetOtpExpiredAt()<System.currentTimeMillis()){
+            throw new RuntimeException("OTP Expired");
+        }
+        existingUser.setPassword(passwordEncoder.encode(newPassword));
+        existingUser.setResetOtp(null);
+        existingUser.setResetOtpExpiredAt(0L);
+
+        userRepo.save(existingUser);
     }
 
     private ProfileResponse convertToProfileResponse(UserEntity userEntity) {

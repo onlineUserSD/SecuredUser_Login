@@ -23,4 +23,13 @@ public void sendWelcomeEmail(String name,String toEmail){
     message.setText("Hello "+name+"\n\nThanks for registering with us!\n\n Regards, \nSecuredUser team!");
     javaMailSender.send(message);
 }
+
+public void sendResetOtpEmail(String toEmail , String otp){
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setFrom(fromEmail);
+    message.setTo(toEmail);
+    message.setSubject("Password reset OTP");
+    message.setText("Your OTP for resetting your password is "+otp+".Don't share this otp with anyone else");
+    javaMailSender.send(message);
+}
 }
