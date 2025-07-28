@@ -83,6 +83,54 @@ public class ProfileServiceImpl implements ProfileService{
         userRepo.save(existingUser);
     }
 
+    @Override
+    public void sendOtp(String email) {
+       UserEntity existingUser =  userRepo.findByEmail(email)
+               .orElseThrow(()-> new UsernameNotFoundException("User not found: "+email));
+       if(existingUser.getIsAccountVerified() != null && existingUser.getIsAccountVerified()){
+           return;
+       }
+
+        String otp =  String.valueOf(ThreadLocalRandom.current().nextInt(100000,1000000));
+
+        long expiryTime = System.currentTimeMillis() + (24 * 60 * 60 * 1000);
+
+        existingUser.setVerifyOtp(otp);
+        existingUser.setVerifyOtpExpiredAt(expiryTime);
+
+        userRepo.save(existingUser);
+
+        try{
+            emailService.sendOtpEmail(existingUser.getEmail(),otp);
+        } catch (Exception e){
+               throw new RuntimeException("Unable to send email");
+        }
+    }
+
+    @Override
+    public void veriftOtp(String email, String otp) {
+         UserEntity existingUser =  userRepo.findByEmail(email)
+                 .orElseThrow(()-> new UsernameNotFoundException("User not found: "+email));
+         if(existingUser.getVerifyOtp() == null || !existingUser.getVerifyOtp().equals(otp)){
+             throw new RuntimeException("Invalid OTP");
+         }
+         if(existingUser.getVerifyOtpExpiredAt() < System.currentTimeMillis()){
+             throw new RuntimeException("OTP expired");
+         }
+         existingUser.setIsAccountVerified(true);
+         existingUser.setVerifyOtp(null);
+         existingUser.setVerifyOtpExpiredAt(0L);
+
+         userRepo.save(existingUser);
+    }
+
+    @Override
+    public String getLoggedinUserId(String email) {
+        UserEntity existingUser =  userRepo.findByEmail(email)
+                .orElseThrow(()->new UsernameNotFoundException("User not found: "+email));
+        return existingUser.getUserId();
+    }
+
     private ProfileResponse convertToProfileResponse(UserEntity userEntity) {
        return ProfileResponse.builder()
                .name(userEntity.getUsername())

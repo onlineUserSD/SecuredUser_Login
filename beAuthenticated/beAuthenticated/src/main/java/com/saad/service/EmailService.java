@@ -32,4 +32,12 @@ public void sendResetOtpEmail(String toEmail , String otp){
     message.setText("Your OTP for resetting your password is "+otp+".Don't share this otp with anyone else");
     javaMailSender.send(message);
 }
+public void sendOtpEmail(String toEmail , String otp){
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setFrom(fromEmail);
+    message.setTo(toEmail);
+    message.setSubject("OTP for email verification");
+    message.setText("Your OTP for email verification is "+otp+". Verify your account using this OTP");
+    javaMailSender.send(message);
+}
 }
